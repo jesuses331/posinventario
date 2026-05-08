@@ -45,7 +45,7 @@ class Producto {
         $params = [];
         $where = '';
         if ($search !== '') {
-            $where = "WHERE codigo LIKE :q1 OR nombre LIKE :q2 OR lote LIKE :q3";
+            $where = "WHERE p.codigo LIKE :q1 OR p.nombre LIKE :q2 OR p.lote LIKE :q3";
             $q = '%' . $search . '%';
             $params[':q1'] = $q;
             $params[':q2'] = $q;
@@ -53,9 +53,11 @@ class Producto {
         }
 
         $sql = "
-            SELECT id, codigo, nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, stock_minimo,
-                   factor_conversion, fecha_vencimiento, lote, estado, imagen
-            FROM productos
+            SELECT p.id, p.codigo, p.nombre, p.precio_compra1, p.precio_compra2, p.precio_venta, p.stock_actual, p.stock_minimo,
+                   p.factor_conversion, p.fecha_vencimiento, p.lote, p.estado, p.imagen, p.categoria_id,
+                   c.nombre AS categoria_nombre
+            FROM productos p
+            LEFT JOIN categorias c ON c.id = p.categoria_id
             $where
             ORDER BY $orderCol $dir
             LIMIT :limit OFFSET :offset
@@ -87,18 +89,18 @@ class Producto {
         $params = [];
         $where = '';
         if ($search !== '') {
-            $where = "WHERE (LOWER(COALESCE(codigo, '')) LIKE :q1 OR LOWER(COALESCE(nombre, '')) LIKE :q2 OR LOWER(COALESCE(lote, '')) LIKE :q3) AND estado = 1";
+            $where = "WHERE (LOWER(COALESCE(p.codigo, '')) LIKE :q1 OR LOWER(COALESCE(p.nombre, '')) LIKE :q2 OR LOWER(COALESCE(p.lote, '')) LIKE :q3) AND p.estado = 1";
             $q = '%' . mb_strtolower($search, 'UTF-8') . '%';
             $params[':q1'] = $q;
             $params[':q2'] = $q;
             $params[':q3'] = $q;
         } else {
-            $where = "WHERE estado = 1";
+            $where = "WHERE p.estado = 1";
         }
 
         $sql = "
-            SELECT id, codigo, nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, imagen
-            FROM productos
+            SELECT p.id, p.codigo, p.nombre, p.precio_compra1, p.precio_compra2, p.precio_venta, p.stock_actual, p.imagen, p.categoria_id
+            FROM productos p
             $where
             ORDER BY $orderCol $dir
             LIMIT :limit OFFSET :offset
@@ -115,10 +117,12 @@ class Producto {
 
     public function findById(int $id): ?array {
         $stmt = $this->db->prepare("
-            SELECT id, nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, stock_minimo,
-                   estado, imagen
-            FROM productos
-            WHERE id = :id
+            SELECT p.id, p.codigo, p.nombre, p.precio_compra1, p.precio_compra2, p.precio_venta, p.stock_actual, p.stock_minimo,
+                   p.estado, p.imagen, p.categoria_id,
+                   c.nombre AS categoria_nombre
+            FROM productos p
+            LEFT JOIN categorias c ON c.id = p.categoria_id
+            WHERE p.id = :id
             LIMIT 1
         ");
         $stmt->execute([':id' => $id]);
@@ -128,10 +132,10 @@ class Producto {
 
     public function findByName(string $nombre): ?array {
         $stmt = $this->db->prepare("
-            SELECT id, nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, stock_minimo,
-                   estado, imagen
-            FROM productos
-            WHERE LOWER(nombre) = :nombre
+            SELECT p.id, p.codigo, p.nombre, p.precio_compra1, p.precio_compra2, p.precio_venta, p.stock_actual, p.stock_minimo,
+                   p.estado, p.imagen, p.categoria_id
+            FROM productos p
+            WHERE LOWER(p.nombre) = :nombre
             LIMIT 1
         ");
         $stmt->execute([':nombre' => mb_strtolower($nombre, 'UTF-8')]);
@@ -140,13 +144,9 @@ class Producto {
     }
 
     public function create(array $data): int {
-        $stmt = $this->db->prepare("
-            INSERT INTO productos
-                (nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, stock_minimo, estado, imagen)
-            VALUES
-                (:nombre, :precio_compra1, :precio_compra2, :precio_venta, :stock_actual, :stock_minimo, :estado, :imagen)
-        ");
-        $stmt->execute([
+        $fields = "nombre, precio_compra1, precio_compra2, precio_venta, stock_actual, stock_minimo, estado, imagen";
+        $values = ":nombre, :precio_compra1, :precio_compra2, :precio_venta, :stock_actual, :stock_minimo, :estado, :imagen";
+        $params = [
             ':nombre' => $data['nombre'],
             ':precio_compra1' => $data['precio_compra1'],
             ':precio_compra2' => $data['precio_compra2'],
@@ -155,7 +155,22 @@ class Producto {
             ':stock_minimo' => $data['stock_minimo'],
             ':estado' => $data['estado'],
             ':imagen' => $data['imagen'] ?? null,
-        ]);
+        ];
+
+        if (array_key_exists('codigo', $data) && $data['codigo'] !== '' && $data['codigo'] !== null) {
+            $fields .= ", codigo";
+            $values .= ", :codigo";
+            $params[':codigo'] = $data['codigo'];
+        }
+
+        if (array_key_exists('categoria_id', $data) && $data['categoria_id'] !== '' && $data['categoria_id'] !== null) {
+            $fields .= ", categoria_id";
+            $values .= ", :categoria_id";
+            $params[':categoria_id'] = (int)$data['categoria_id'];
+        }
+
+        $stmt = $this->db->prepare("INSERT INTO productos ($fields) VALUES ($values)");
+        $stmt->execute($params);
         return (int)$this->db->lastInsertId();
     }
 
@@ -169,7 +184,7 @@ class Producto {
             stock_minimo = :stock_minimo,
             estado = :estado
         ";
-        
+
         $params = [
             ':id' => $id,
             ':nombre' => $data['nombre'],
@@ -180,14 +195,23 @@ class Producto {
             ':stock_minimo' => $data['stock_minimo'],
             ':estado' => $data['estado'],
         ];
-        
+
+        if (array_key_exists('codigo', $data)) {
+            $fields .= ", codigo = :codigo";
+            $params[':codigo'] = $data['codigo'];
+        }
+
+        if (array_key_exists('categoria_id', $data)) {
+            $fields .= ", categoria_id = :categoria_id";
+            $params[':categoria_id'] = $data['categoria_id'] !== '' && $data['categoria_id'] !== null ? (int)$data['categoria_id'] : null;
+        }
+
         if (array_key_exists('imagen', $data)) {
             $fields .= ", imagen = :imagen";
             $params[':imagen'] = $data['imagen'];
         }
-        
+
         $stmt = $this->db->prepare("UPDATE productos SET $fields WHERE id = :id LIMIT 1");
         $stmt->execute($params);
     }
 }
-

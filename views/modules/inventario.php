@@ -40,34 +40,38 @@ require_once __DIR__ . '/../layout/header.php';
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <?php if (Auth::isAdmin()): ?>
-                <button class="btn btn-primary" type="button" id="btnNuevo"><i class="bi bi-plus-lg"></i> Nuevo</button>
-                
-                <div class="dropdown">
-                    <button class="btn btn-theme-outline dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-file-earmark-arrow-up"></i> Importar
-                    </button>
-                    <div class="dropdown-menu p-3" style="width: 250px;">
-                        <form id="importarExcelForm" enctype="multipart/form-data">
-                            <label class="form-label small fw-bold">Plantilla Excel/CSV</label>
-                            <input type="file" name="excel_file" class="form-control form-control-sm mb-2" accept=".xlsx, .xls, .csv" required>
-                            <button type="submit" class="btn btn-success btn-sm w-100">Cargar Datos</button>
-                        </form>
+                    <button class="btn btn-primary" type="button" id="btnNuevo"><i class="bi bi-plus-lg"></i> Nuevo</button>
+
+                    <div class="dropdown">
+                        <button class="btn btn-theme-outline dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-file-earmark-arrow-up"></i> Importar
+                        </button>
+                        <div class="dropdown-menu p-3" style="width: 250px;">
+                            <form id="importarExcelForm" enctype="multipart/form-data">
+                                <label class="form-label small fw-bold">Plantilla Excel/CSV</label>
+                                <input type="file" name="excel_file" class="form-control form-control-sm mb-2"
+                                    accept=".xlsx, .xls, .csv" required>
+                                <button type="submit" class="btn btn-success btn-sm w-100">Cargar Datos</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
                 <?php endif; ?>
 
                 <div class="btn-group">
-                    <a href="<?= $baseUrl ?>views/modules/inventario_reporte.php" target="_blank" class="btn btn-theme-outline text-danger">
+                    <a href="<?= $baseUrl ?>views/modules/inventario_reporte.php" target="_blank"
+                        class="btn btn-theme-outline text-danger">
                         <i class="bi bi-file-pdf"></i> Stock
                     </a>
-                    <a href="<?= $baseUrl ?>views/modules/inventario_cliente_pdf.php" target="_blank" class="btn btn-theme-outline text-info">
+                    <a href="<?= $baseUrl ?>views/modules/inventario_cliente_pdf.php" target="_blank"
+                        class="btn btn-theme-outline text-info">
                         <i class="bi bi-person-lines-fill"></i> Clientes
                     </a>
                 </div>
             </div>
         </div>
 
-        <div id="loading" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; background: rgba(19,36,61,0.9); color: white; padding: 24px; border-radius: var(--radius-lg); text-align: center; box-shadow: var(--shadow-lg);">
+        <div id="loading"
+            style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; background: rgba(19,36,61,0.9); color: white; padding: 24px; border-radius: var(--radius-lg); text-align: center; box-shadow: var(--shadow-lg);">
             <div class="spinner-border text-primary mb-3" role="status"></div>
             <div class="fw-bold">Procesando información...</div>
         </div>
@@ -75,19 +79,20 @@ require_once __DIR__ . '/../layout/header.php';
         <div class="card p-3">
             <div class="table-responsive">
                 <table id="tablaProductos" class="table table-hover align-middle mb-0" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Imagen</th>
-                        <th>Producto</th>
-                        <th class="text-end">Costo</th>
-                        <th class="text-end">Venta</th>
-                        <th class="text-end">Stock</th>
-                        <th class="text-end">Mín</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Imagen</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th class="text-end">Costo</th>
+                            <th class="text-end">Venta</th>
+                            <th class="text-end">Stock</th>
+                            <th class="text-end">Mín</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
                 </table>
             </div>
         </div>
@@ -110,24 +115,40 @@ require_once __DIR__ . '/../layout/header.php';
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label form-label-compact">Nombre del Producto *</label>
-                            <input class="form-control themed-input" name="nombre" id="p_nombre" required placeholder="Ej: Protector de Pantalla">
+                            <input class="form-control themed-input" name="nombre" id="p_nombre" required
+                                placeholder="Ej: Protector de Pantalla">
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label form-label-compact">Código del Producto </label>
+                            <input class="form-control themed-input" name="codigo" id="p_codigo"
+                                placeholder="Ej: 1234567890">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-compact">Categoría</label>
+                            <select class="form-select themed-input" name="categoria_id" id="p_categoria">
+                                <option value="">Sin categoría</option>
+                            </select>
                         </div>
 
                         <div class="col-6 col-md-3">
                             <label class="form-label form-label-compact">P. Compra</label>
-                            <input type="number" step="0.01" class="form-control themed-input" name="precio_compra1" id="p_compra1" value="0">
+                            <input type="number" step="0.01" class="form-control themed-input" name="precio_compra1"
+                                id="p_compra1" value="0">
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label form-label-compact">P. Venta</label>
-                            <input type="number" step="0.01" class="form-control themed-input" name="precio_venta" id="p_venta" value="0">
+                            <input type="number" step="0.01" class="form-control themed-input" name="precio_venta"
+                                id="p_venta" value="0">
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label form-label-compact">Stock Actual</label>
-                            <input type="number" step="0.001" class="form-control themed-input" name="stock_actual" id="p_stock" value="0">
+                            <input type="number" step="0.001" class="form-control themed-input" name="stock_actual"
+                                id="p_stock" value="0">
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label form-label-compact">Stock Mínimo</label>
-                            <input type="number" step="0.001" class="form-control themed-input" name="stock_minimo" id="p_min" value="0">
+                            <input type="number" step="0.001" class="form-control themed-input" name="stock_minimo"
+                                id="p_min" value="0">
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label form-label-compact">Estado</label>
@@ -136,11 +157,13 @@ require_once __DIR__ . '/../layout/header.php';
                                 <option value="0">Inactivo</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-12">
                             <label class="form-label form-label-compact">Imagen del Producto</label>
-                            <input type="file" name="imagen" id="p_imagen" class="form-control themed-input" accept="image/*" capture="environment">
-                            <div class="form-text">Formatos: JPG, PNG, GIF, WebP. Se convertirá automáticamente a WebP. En móvil permite tomar foto.</div>
+                            <input type="file" name="imagen" id="p_imagen" class="form-control themed-input"
+                                accept="image/*" capture="environment">
+                            <div class="form-text">Formatos: JPG, PNG, GIF, WebP. Se convertirá automáticamente a WebP.
+                                En móvil permite tomar foto.</div>
                             <div id="preview_imagen" class="mt-2" style="display:none;">
                                 <img src="" alt="Preview" style="max-height: 100px; border-radius: 8px;">
                             </div>
@@ -148,13 +171,13 @@ require_once __DIR__ . '/../layout/header.php';
                     </div>
                 </div>
                 <div class="modal-footer">
-                        <button type="button" class="btn btn-theme-outline" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar Cambios</button>
-                    </div>
-                </form>
-            </div>
+                    <button type="button" class="btn btn-theme-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal Ver Imagen -->
@@ -166,7 +189,8 @@ require_once __DIR__ . '/../layout/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
-                <img id="imgProductoGrande" src="" alt="Imagen del producto" style="max-width: 100%; border-radius: 8px;">
+                <img id="imgProductoGrande" src="" alt="Imagen del producto"
+                    style="max-width: 100%; border-radius: 8px;">
             </div>
         </div>
     </div>
@@ -179,21 +203,41 @@ require_once __DIR__ . '/../layout/header.php';
         const baseUrl = <?php echo json_encode($baseUrl, JSON_UNESCAPED_SLASHES); ?>;
         const csrfToken = <?php echo json_encode($csrfToken, JSON_UNESCAPED_SLASHES); ?>;
         const apiUrl = baseUrl + 'views/modules/productos_api.php';
+        const categoriasApiUrl = baseUrl + 'views/modules/categorias_api.php';
 
         const modalEl = document.getElementById('modalProducto');
         const modal = new bootstrap.Modal(modalEl);
         const form = document.getElementById('formProducto');
 
+        let categorias = [];
+
+        async function loadCategorias() {
+            try {
+                const res = await fetch(categoriasApiUrl + '?action=list_all');
+                const json = await res.json();
+                if (json.ok) {
+                    categorias = json.data;
+                    const sel = document.getElementById('p_categoria');
+                    sel.innerHTML = '<option value="">Sin categoría</option>';
+                    categorias.forEach(c => {
+                        sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
         function fillForm(data) {
             document.getElementById('p_id').value = data?.id ?? 0;
             document.getElementById('p_nombre').value = data?.nombre ?? '';
+            document.getElementById('p_codigo').value = data?.codigo ?? '';
+            document.getElementById('p_categoria').value = data?.categoria_id ?? '';
             document.getElementById('p_compra1').value = data?.precio_compra1 ?? 0;
             document.getElementById('p_venta').value = data?.precio_venta ?? 0;
             document.getElementById('p_stock').value = data?.stock_actual ?? 0;
             document.getElementById('p_min').value = data?.stock_minimo ?? 5;
             document.getElementById('p_estado').value = (data?.estado ?? 1).toString();
             document.getElementById('p_imagen').value = '';
-            
+
             const preview = document.getElementById('preview_imagen');
             if (data?.imagen) {
                 preview.style.display = 'block';
@@ -216,7 +260,7 @@ require_once __DIR__ . '/../layout/header.php';
             order: [[0, 'desc']],
             columns: [
                 { data: 'id', className: 'text-muted small' },
-                { 
+                {
                     data: 'imagen',
                     orderable: false,
                     render: (imagen, type, row) => {
@@ -227,14 +271,19 @@ require_once __DIR__ . '/../layout/header.php';
                     }
                 },
                 { data: 'nombre', className: 'fw-bold text-heading' },
+                {
+                    data: 'categoria_nombre',
+                    className: 'text-muted small',
+                    render: (v) => v || '<span class="text-muted fst-italic">Sin categoría</span>'
+                },
                 { data: 'precio_compra1', className: 'text-end', render: (v) => Number(v || 0).toFixed(2) },
                 { data: 'precio_venta', className: 'text-end', render: (v) => Number(v || 0).toFixed(2) },
                 { data: 'stock_actual', className: 'text-end fw-bold' },
                 { data: 'stock_minimo', className: 'text-end text-muted' },
-                { 
-                    data: 'estado', 
+                {
+                    data: 'estado',
                     className: 'text-center',
-                    render: (v) => v == 1 ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>' 
+                    render: (v) => v == 1 ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>'
                 },
                 {
                     data: null,
@@ -249,6 +298,8 @@ require_once __DIR__ . '/../layout/header.php';
             ],
             language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
         });
+
+        loadCategorias();
 
         document.getElementById('btnNuevo').addEventListener('click', () => {
             document.getElementById('modalTitle').textContent = 'Nuevo Producto';
@@ -294,12 +345,12 @@ require_once __DIR__ . '/../layout/header.php';
         });
 
         // Preview de imagen
-        document.getElementById('p_imagen').addEventListener('change', function(e) {
+        document.getElementById('p_imagen').addEventListener('change', function (e) {
             const file = e.target.files[0];
             const preview = document.getElementById('preview_imagen');
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     preview.style.display = 'block';
                     preview.querySelector('img').src = e.target.result;
                 }
@@ -310,7 +361,7 @@ require_once __DIR__ . '/../layout/header.php';
         });
 
         // Ver imagen grande
-        window.verImagen = function(url) {
+        window.verImagen = function (url) {
             document.getElementById('imgProductoGrande').src = url;
             new bootstrap.Modal(document.getElementById('modalVerImagen')).show();
         }

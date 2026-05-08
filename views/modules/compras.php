@@ -217,6 +217,17 @@ require_once __DIR__ . '/../layout/header.php';
                     <input type="text" class="form-control form-control-lg bg-light" id="n_nombre" required
                         placeholder="Ej: producto 1 ">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Código de Barras</label>
+                    <input type="text" class="form-control form-control-lg bg-light" id="n_codigo"
+                        placeholder="Ej: 1234567890 (dejar vacío si no tiene)">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Categoría</label>
+                    <select class="form-select form-select-lg bg-light" id="n_categoria">
+                        <option value="">Sin categoría</option>
+                    </select>
+                </div>
                 <div class="row g-3 mb-3">
                     <div class="col-6">
                         <label class="form-label fw-bold small text-muted">Precio Compra</label>
@@ -257,14 +268,34 @@ require_once __DIR__ . '/../layout/header.php';
         document.addEventListener('DOMContentLoaded', () => {
             const baseUrl = '<?= $baseUrl ?>';
             const apiUrl = baseUrl + 'views/modules/compras_api.php';
+            const categoriasApiUrl = baseUrl + 'views/modules/categorias_api.php';
             const csrfToken = '<?= $csrfToken ?>';
 
-            let comprasItems = []; // {producto_id: -1|id, nombre, precio_compra1, precio_compra2, precio_venta, cantidad}
+            let comprasItems = []; // {producto_id: -1|id, nombre, codigo, categoria_id, precio_compra1, precio_compra2, precio_venta, cantidad}
 
             const searchProd = document.getElementById('searchProd');
             const searchSuggestions = document.getElementById('searchSuggestions');
             const listaCompra = document.getElementById('listaCompra');
             const totalCompraEl = document.getElementById('totalCompra');
+
+            let categorias = [];
+
+            async function loadCategorias() {
+                try {
+                    const res = await fetch(categoriasApiUrl + '?action=list_all');
+                    const json = await res.json();
+                    if (json.ok) {
+                        categorias = json.data;
+                        const sel = document.getElementById('n_categoria');
+                        sel.innerHTML = '<option value="">Sin categoría</option>';
+                        categorias.forEach(c => {
+                            sel.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                        });
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            loadCategorias();
 
             function money(n) { return Number(n || 0).toFixed(2); }
 
@@ -352,6 +383,8 @@ require_once __DIR__ . '/../layout/header.php';
                         addToPurchase({
                             producto_id: p.id,
                             nombre: p.nombre,
+                            codigo: p.codigo || null,
+                            categoria_id: p.categoria_id || null,
                             precio_compra1: p.precio_compra1,
                             precio_compra2: p.precio_compra2,
                             precio_venta: p.precio_venta,
@@ -384,6 +417,8 @@ require_once __DIR__ . '/../layout/header.php';
                 addToPurchase({
                     producto_id: -1,
                     nombre: nombre,
+                    codigo: document.getElementById('n_codigo').value.trim() || null,
+                    categoria_id: document.getElementById('n_categoria').value || null,
                     precio_compra1: parseFloat(document.getElementById('n_p1').value) || 0,
                     precio_compra2: 0,
                     precio_venta: parseFloat(document.getElementById('n_venta').value) || 0,
@@ -391,6 +426,8 @@ require_once __DIR__ . '/../layout/header.php';
                 });
                 modalNuevo.hide();
                 document.getElementById('n_nombre').value = '';
+                document.getElementById('n_codigo').value = '';
+                document.getElementById('n_categoria').value = '';
             });
 
             // Save

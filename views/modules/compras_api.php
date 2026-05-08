@@ -69,45 +69,52 @@ if ($action === 'save_purchase') {
         foreach ($items as $it) {
             $prodId = (int)($it['producto_id'] ?? 0);
             $nombre = trim((string)($it['nombre'] ?? ''));
+            $codigo = isset($it['codigo']) && $it['codigo'] !== '' && $it['codigo'] !== null ? trim((string)$it['codigo']) : null;
+            $categoriaId = isset($it['categoria_id']) && $it['categoria_id'] !== '' && $it['categoria_id'] !== null ? (int)$it['categoria_id'] : null;
             $p1 = (float)($it['precio_compra1'] ?? 0);
             $p2 = (float)($it['precio_compra2'] ?? 0);
             $venta = (float)($it['precio_venta'] ?? 0);
             $cantidad = (float)($it['cantidad'] ?? 0);
-            $subtotal = $venta * $cantidad; // El total de la compra suele ser por costo, pero guardaremos subtotal por venta o costo segun prefiera. 
-            // Para una compra, el subtotal deberia ser por costo. Usaremos P1 como referencia para el subtotal de la compra.
-            $subtotalCompra = $p1 * $cantidad; 
+            $subtotal = $venta * $cantidad;
+            $subtotalCompra = $p1 * $cantidad;
 
             if ($prodId > 0) {
                 // Producto existente
                 $existente = $productoModel->findById($prodId);
                 if ($existente) {
                     $nuevoStock = (float)$existente['stock_actual'] + $cantidad;
-                    $productoModel->update($prodId, [
+                    $updateData = [
                         'nombre' => $nombre ?: $existente['nombre'],
+                        'codigo' => $codigo,
                         'precio_compra1' => $p1,
                         'precio_compra2' => $p2,
                         'precio_venta' => $venta,
                         'stock_actual' => $nuevoStock,
                         'stock_minimo' => $existente['stock_minimo'],
-                        'estado' => 1
-                    ]);
+                        'estado' => 1,
+                        'categoria_id' => $categoriaId,
+                    ];
+                    $productoModel->update($prodId, $updateData);
                 }
             } else {
                 // Producto nuevo
-                $prodId = $productoModel->create([
+                $createData = [
                     'nombre' => $nombre,
+                    'codigo' => $codigo,
+                    'categoria_id' => $categoriaId,
                     'precio_compra1' => $p1,
                     'precio_compra2' => $p2,
                     'precio_venta' => $venta,
                     'stock_actual' => $cantidad,
                     'stock_minimo' => 5,
-                    'estado' => 1
-                ]);
+                    'estado' => 1,
+                ];
+                $prodId = $productoModel->create($createData);
             }
 
             // Registro en detalle
             $stmtDet = $db->prepare("
-                INSERT INTO compras_detalle 
+                INSERT INTO compras_detalle
                 (compra_id, producto_id, cantidad, precio_compra1, precio_compra2, precio_venta, subtotal)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
