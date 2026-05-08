@@ -77,6 +77,12 @@
                 href="<?php echo htmlspecialchars($baseUrl . 'views/modules/inventario.php'); ?>">
                 <i class="bi bi-box-seam"></i> Inventario
             </a>
+            <?php if (Auth::isAdmin()): ?>
+            <a class="nav-link <?php echo ($active == 'categorias') ? 'active' : ''; ?>"
+                href="<?php echo htmlspecialchars($baseUrl . 'views/modules/categorias.php'); ?>">
+                <i class="bi bi-tags"></i> Categorías
+            </a>
+            <?php endif; ?>
             <a class="nav-link <?php echo ($active == 'clientes') ? 'active' : ''; ?>"
                 href="<?php echo htmlspecialchars($baseUrl . 'views/modules/clientes.php'); ?>">
                 <i class="bi bi-people"></i> Clientes

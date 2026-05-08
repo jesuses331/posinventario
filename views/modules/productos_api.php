@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Auth.php';
 require_once __DIR__ . '/../../models/Producto.php';
+require_once __DIR__ . '/../../models/Categoria.php';
 
 Auth::checkAccess();
 
@@ -28,6 +29,7 @@ function require_csrf(): void {
 try {
     $db = (new Database())->getConnection();
     $producto = new Producto($db);
+    $categoria = new Categoria($db);
 } catch (Throwable $e) {
     json_out(500, ['ok' => false, 'message' => 'No se pudo conectar a la base de datos.']);
 }
@@ -35,7 +37,6 @@ try {
 $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 
 if ($action === 'list_for_pos') {
-    // Permitir cajeros para esta acción
     if (!isset($_SESSION['user_id'])) {
         json_out(403, ['ok' => false, 'message' => 'Acceso denegado.']);
     }
@@ -78,14 +79,12 @@ if ($action === 'list') {
 
         $columns = [
             0 => 'id',
-            // 1 => 'codigo',
             2 => 'nombre',
             3 => 'precio_compra1',
             4 => 'precio_compra2',
             5 => 'precio_venta',
             6 => 'stock_actual',
             7 => 'stock_minimo',
-            // 8 => 'fecha_vencimiento',
             9 => 'estado',
         ];
         $orderIdx = (int)($_GET['order'][0]['column'] ?? 0);
@@ -134,12 +133,14 @@ if ($action === 'save') {
     try {
         $id = (int)($_POST['id'] ?? 0);
         $nombre = trim((string)($_POST['nombre'] ?? ''));
+        $codigo = trim((string)($_POST['codigo'] ?? ''));
         $precioCompra1 = (float)($_POST['precio_compra1'] ?? 0);
         $precioCompra2 = (float)($_POST['precio_compra2'] ?? 0);
         $precioVenta = (float)($_POST['precio_venta'] ?? 0);
         $stockActual = (float)($_POST['stock_actual'] ?? 0);
         $stockMinimo = (float)($_POST['stock_minimo'] ?? 5);
         $estado = (int)($_POST['estado'] ?? 1);
+        $categoriaId = $_POST['categoria_id'] ?? '';
 
         if ($nombre === '') {
             json_out(422, ['ok' => false, 'message' => 'Nombre son obligatorios.']);
@@ -148,12 +149,14 @@ if ($action === 'save') {
 
         $payload = [
             'nombre' => $nombre,
+            'codigo' => $codigo ?: null,
             'precio_compra1' => $precioCompra1,
             'precio_compra2' => $precioCompra2,
             'precio_venta' => $precioVenta,
             'stock_actual' => $stockActual,
             'stock_minimo' => $stockMinimo,
             'estado' => $estado,
+            'categoria_id' => $categoriaId !== '' ? (int)$categoriaId : null,
         ];
 
         // Procesar imagen si se subió
@@ -197,25 +200,25 @@ if ($action === 'save') {
                         $maxWidth = 800;
                         $origWidth = imagesx($source);
                         $origHeight = imagesy($source);
-                        
+
                         if ($origWidth > $maxWidth) {
                             $ratio = $maxWidth / $origWidth;
                             $newWidth = $maxWidth;
                             $newHeight = $origHeight * $ratio;
                             $resized = imagecreatetruecolor($newWidth, $newHeight);
-                            
+
                             // Preservar transparencia para PNG
                             if ($imageInfo[2] == IMAGETYPE_PNG) {
                                 imagecolortransparent($resized, imagecolorallocatealpha($resized, 0, 0, 0, 127));
                                 imagealphablending($resized, false);
                                 imagesavealpha($resized, true);
                             }
-                            
+
                             imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
                             imagedestroy($source);
                             $source = $resized;
                         }
-                        
+
                         // Guardar como WebP con calidad 80
                         if (imagewebp($source, $targetPath, 80)) {
                             $imagenPath = 'assets/uploads/productos/' . $newFileName;
@@ -238,7 +241,7 @@ if ($action === 'save') {
             $producto->update($id, $payload);
             json_out(200, ['ok' => true, 'message' => 'Producto actualizado.']);
         }
-        
+
         if ($imagenPath) {
             $payload['imagen'] = $imagenPath;
         }
@@ -301,7 +304,7 @@ if ($action === 'bulk_save') {
         }
 
         json_out(200, [
-            'ok' => true, 
+            'ok' => true,
             'message' => "Proceso completado. Creados: $created, Actualizados: $updated",
             'created' => $created,
             'updated' => $updated
@@ -312,4 +315,3 @@ if ($action === 'bulk_save') {
 }
 
 json_out(400, ['ok' => false, 'message' => 'Acción inválida.']);
-
